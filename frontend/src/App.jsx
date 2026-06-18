@@ -124,14 +124,16 @@ function App() {
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
         {/* Header */}
-        <header style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '60px', height: '60px', borderRadius: '20px', background: 'linear-gradient(135deg, #312e81, #4f46e5)', boxShadow: '0 8px 30px rgba(99, 102, 241, 0.3)', marginBottom: '1rem', fontSize: '1.75rem' }}>
-            🌙
+        <header style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '54px', height: '54px', borderRadius: '16px', background: 'linear-gradient(135deg, #312e81, #4f46e5)', boxShadow: '0 8px 30px rgba(99, 102, 241, 0.3)', fontSize: '1.6rem', flexShrink: 0 }}>
+              🌙
+            </div>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', margin: 0, background: 'linear-gradient(to right, #ffffff, #c7d2fe, #e0e7ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Al-Layl Night Calculator
+            </h1>
           </div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', margin: '0 0 0.5rem', background: 'linear-gradient(to right, #ffffff, #c7d2fe, #e0e7ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Al-Layl Night Calculator
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '1rem', maxW: '600px', margin: '0 auto', fontWeight: 500 }}>
+          <p style={{ color: '#64748b', fontSize: '1rem', maxW: '600px', margin: '0 auto', fontWeight: 500, textAlign: 'center' }}>
             Divisions of the night (thirds, halves) and computed windows in a sleek Bento Box dashboard.
           </p>
         </header>
@@ -139,6 +141,220 @@ function App() {
         {/* Bento Grid */}
         <div className="bento-grid">
 
+          {/* Row 1: Timings & Calculations Metrics (Col Span 1 each) */}
+          {results && (
+            <>
+              {/* Cell 5: Result - 2nd Third Start */}
+              <div className="bento-cell bento-col-1">
+                <div>
+                  <div className="cell-title">
+                    <span>✨ 2nd Third Starts</span>
+                    <span className="info-icon" title="Marks the end of the first third of the night. Important division in prayer schedules.">?</span>
+                  </div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0' }} className="glow-text-indigo">
+                    {results.second_third_start}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
+                    Starts exactly {Math.round(results.night_duration_minutes / 3)} mins after sunset.
+                  </p>
+                </div>
+              </div>
+
+              {/* Cell 6: Result - Islamic Midnight */}
+              <div className="bento-cell bento-col-1">
+                <div>
+                  <div className="cell-title">
+                    <span>🌙 Midnight</span>
+                    <span className="info-icon" title="The exact middle point of the night (Nisf al-Layl). Begins the second half of the night.">?</span>
+                  </div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0' }} className="glow-text-teal">
+                    {results.midpoint_start}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
+                    Starts exactly {Math.round(results.night_duration_minutes / 2)} mins after sunset.
+                  </p>
+                </div>
+              </div>
+
+              {/* Cell 8: Result - To Islamic Midnight */}
+              <div className="bento-cell bento-col-1">
+                <div>
+                  <div className="cell-title">
+                    <span>🛡️ To Islamic Midnight</span>
+                    <span className="info-icon" title="Calculated time duration from the start of the 2nd third of the night to the Islamic midpoint. Always equal to 1/6th of total night duration.">?</span>
+                  </div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0', color: '#2dd4bf' }} className="glow-text-teal">
+                    {results.to_islamic_midnight.duration_formatted}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#2dd4bf', opacity: 0.8, margin: 0 }}>
+                    Interval: {results.to_islamic_midnight.start} → {results.to_islamic_midnight.end}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Row 2: Live Divisions Visualizer (Col Span 3) */}
+          {results && (
+            <div className="bento-cell bento-col-3">
+              <div>
+                <div className="cell-title">📊 Live Divisions Visualizer</div>
+
+                <div style={{ position: 'relative', width: '100%', height: '140px', background: 'rgba(2, 3, 10, 0.45)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)', overflow: 'hidden', marginTop: '0.75rem' }}>
+                  {/* Shaded partitions */}
+                  {(() => {
+                    // Dynamic percentage mapper: maps val in [startVal, endVal] to [0, 100]
+                    const getVisPercent = (val) => ((val - startVal) / (endVal - startVal)) * 100;
+
+                    const secThirdVal = timeStrToVal(results.second_third_start);
+                    const midpointVal = timeStrToVal(results.midpoint_start);
+                    const thirdThirdVal = timeStrToVal(results.third_third_start);
+
+                    const startPct = 0;
+                    const endPct = 100;
+                    const secThirdPct = getVisPercent(secThirdVal);
+                    const midpointPct = getVisPercent(midpointVal);
+                    const thirdThirdPct = getVisPercent(thirdThirdVal);
+                    const midnightPct = getVisPercent(480);
+                    const showMidnight = startVal < 480 && endVal > 480;
+
+                    return (
+                      <>
+                        {/* 1st Third */}
+                        <div style={{
+                          position: 'absolute',
+                          left: `${startPct}%`,
+                          width: `${secThirdPct - startPct}%`,
+                          height: '100%',
+                          background: 'linear-gradient(to bottom, rgba(49, 46, 129, 0.12), rgba(7, 6, 20, 0.4))',
+                          borderRight: '1px dashed rgba(255,255,255,0.06)'
+                        }} />
+
+                        {/* 2nd Third */}
+                        <div style={{
+                          position: 'absolute',
+                          left: `${secThirdPct}%`,
+                          width: `${thirdThirdPct - secThirdPct}%`,
+                          height: '100%',
+                          background: 'linear-gradient(to bottom, rgba(67, 56, 202, 0.15), rgba(7, 6, 20, 0.4))',
+                          borderRight: '1px dashed rgba(255,255,255,0.06)'
+                        }} />
+
+                        {/* 3rd Third */}
+                        <div style={{
+                          position: 'absolute',
+                          left: `${thirdThirdPct}%`,
+                          width: `${endPct - thirdThirdPct}%`,
+                          height: '100%',
+                          background: 'linear-gradient(to bottom, rgba(99, 102, 241, 0.12), rgba(7, 6, 20, 0.4))'
+                        }} />
+
+                        {/* Highlight Target Range (To Islamic Midnight / Optimal Isha Window) */}
+                        {results.to_islamic_midnight.exists && (
+                          <div style={{
+                            position: 'absolute',
+                            left: `${secThirdPct}%`,
+                            width: `${midpointPct - secThirdPct}%`,
+                            height: '34px',
+                            bottom: '12px',
+                            background: 'linear-gradient(to right, rgba(45, 212, 191, 0.25), rgba(45, 212, 191, 0.05))',
+                            border: '1px solid rgba(45, 212, 191, 0.45)',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#2dd4bf',
+                            boxShadow: '0 0 15px rgba(45, 212, 191, 0.12)',
+                            zIndex: 3
+                          }}>
+                            ✨ Isha Preferred Window: {results.to_islamic_midnight.duration_formatted}
+                          </div>
+                        )}
+
+                        {/* Ticks & Text */}
+                        <div style={{ position: 'absolute', top: '12px', left: '16px', textAlign: 'left', zIndex: 5 }}>
+                          <div style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600 }}>Sunset</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{results.start_time}</div>
+                        </div>
+
+                        <div style={{ position: 'absolute', top: '24px', left: `${secThirdPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 5 }}>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 500 }}>2nd Third</div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>{results.second_third_start}</div>
+                        </div>
+
+                        <div style={{ position: 'absolute', top: '48px', left: `${midpointPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 4 }}>
+                          <div style={{ borderLeft: '1.5px dotted #2dd4bf', height: '92px', position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '0px', opacity: 0.6 }} />
+                          <div style={{ fontSize: '0.65rem', color: '#2dd4bf', fontWeight: 600, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(45, 212, 191, 0.2)' }}>🌙 Midpoint: {results.midpoint_start}</div>
+                        </div>
+
+                        {showMidnight && (
+                          <div style={{ position: 'absolute', bottom: '52px', left: `${midnightPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 4 }}>
+                            <div style={{ borderLeft: '1.5px dashed #f43f5e', height: '88px', position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '0px', opacity: 0.5 }} />
+                            <div style={{ fontSize: '0.65rem', color: '#f43f5e', fontWeight: 600, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(244, 63, 94, 0.2)' }}>⏰ Midnight</div>
+                          </div>
+                        )}
+
+                        <div style={{ position: 'absolute', top: '24px', left: `${thirdThirdPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 5 }}>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 500 }}>3rd Third</div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>{results.third_third_start}</div>
+                        </div>
+
+                        <div style={{ position: 'absolute', top: '12px', right: '16px', textAlign: 'right', zIndex: 5 }}>
+                          <div style={{ fontSize: '0.7rem', color: '#38bdf8', fontWeight: 600 }}>Dawn</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{results.end_time}</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Row 3: Interactive Slider (Col Span 3) */}
+          <div className="bento-cell bento-col-3">
+            <div>
+              <div className="cell-title">🎚️ Drag to Adjust Night Range</div>
+
+              <div className="timeline-slider-container" ref={sliderRef} style={{ marginTop: '1.5rem' }}>
+                <div className="timeline-track"></div>
+                <div className="timeline-highlight" style={{
+                  left: `${getPercent(startVal)}%`,
+                  width: `${getPercent(endVal) - getPercent(startVal)}%`
+                }}></div>
+
+                <div
+                  className="slider-handle slider-handle-start"
+                  style={{ left: `${getPercent(startVal)}%` }}
+                  onPointerDown={(e) => handlePointerDown('start', e)}
+                >
+                  <div className="handle-tooltip">Start: {valToTimeStr(startVal)}</div>
+                </div>
+
+                <div
+                  className="slider-handle slider-handle-end"
+                  style={{ left: `${getPercent(endVal)}%` }}
+                  onPointerDown={(e) => handlePointerDown('end', e)}
+                >
+                  <div className="handle-tooltip">End: {valToTimeStr(endVal)}</div>
+                </div>
+              </div>
+
+              <div className="timeline-labels">
+                <span>16:00</span>
+                <span>18:30</span>
+                <span>21:00</span>
+                <span>23:30</span>
+                <span>02:00</span>
+                <span>04:30</span>
+                <span>06:00</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 4: Controls (Stepper + Presets) */}
           {/* Cell 1: Adjusters / Current Config (Col Span 2) */}
           <div className="bento-cell bento-col-2">
             <div>
@@ -210,254 +426,14 @@ function App() {
             </div>
           </div>
 
-          {/* Cell 3: Interactive Slider (Col Span 3) */}
+          {/* Row 5: Educational Box (Col Span 3) */}
           <div className="bento-cell bento-col-3">
-            <div>
-              <div className="cell-title">🎚️ Drag to Adjust Night Range</div>
-
-              <div className="timeline-slider-container" ref={sliderRef} style={{ marginTop: '1.5rem' }}>
-                <div className="timeline-track"></div>
-                <div className="timeline-highlight" style={{
-                  left: `${getPercent(startVal)}%`,
-                  width: `${getPercent(endVal) - getPercent(startVal)}%`
-                }}></div>
-
-                <div
-                  className="slider-handle slider-handle-start"
-                  style={{ left: `${getPercent(startVal)}%` }}
-                  onPointerDown={(e) => handlePointerDown('start', e)}
-                >
-                  <div className="handle-tooltip">Start: {valToTimeStr(startVal)}</div>
-                </div>
-
-                <div
-                  className="slider-handle slider-handle-end"
-                  style={{ left: `${getPercent(endVal)}%` }}
-                  onPointerDown={(e) => handlePointerDown('end', e)}
-                >
-                  <div className="handle-tooltip">End: {valToTimeStr(endVal)}</div>
-                </div>
-              </div>
-
-              <div className="timeline-labels">
-                <span>16:00</span>
-                <span>18:30</span>
-                <span>21:00</span>
-                <span>23:30</span>
-                <span>02:00</span>
-                <span>04:30</span>
-                <span>06:00</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Cell 4: Visualizer (Col Span 3) */}
-          {results && (
-            <div className="bento-cell bento-col-3">
-              <div>
-                <div className="cell-title">📊 Live Divisions Visualizer</div>
-
-                <div style={{ position: 'relative', width: '100%', height: '140px', background: 'rgba(2, 3, 10, 0.45)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)', overflow: 'hidden', marginTop: '0.75rem' }}>
-                  {/* Shaded partitions */}
-                  {(() => {
-                    const startPct = getPercent(startVal);
-                    const endPct = getPercent(endVal);
-                    const secThirdVal = timeStrToVal(results.second_third_start);
-                    const midpointVal = timeStrToVal(results.midpoint_start);
-                    const thirdThirdVal = timeStrToVal(results.third_third_start);
-
-                    const secThirdPct = getPercent(secThirdVal);
-                    const midpointPct = getPercent(midpointVal);
-                    const thirdThirdPct = getPercent(thirdThirdVal);
-                    const midnightPct = getPercent(480);
-
-                    return (
-                      <>
-                        {/* 1st Third */}
-                        <div style={{
-                          position: 'absolute',
-                          left: `${startPct}%`,
-                          width: `${secThirdPct - startPct}%`,
-                          height: '100%',
-                          background: 'linear-gradient(to bottom, rgba(49, 46, 129, 0.12), rgba(7, 6, 20, 0.4))',
-                          borderRight: '1px dashed rgba(255,255,255,0.06)'
-                        }} />
-
-                        {/* 2nd Third */}
-                        <div style={{
-                          position: 'absolute',
-                          left: `${secThirdPct}%`,
-                          width: `${thirdThirdPct - secThirdPct}%`,
-                          height: '100%',
-                          background: 'linear-gradient(to bottom, rgba(67, 56, 202, 0.15), rgba(7, 6, 20, 0.4))',
-                          borderRight: '1px dashed rgba(255,255,255,0.06)'
-                        }} />
-
-                        {/* 3rd Third */}
-                        <div style={{
-                          position: 'absolute',
-                          left: `${thirdThirdPct}%`,
-                          width: `${endPct - thirdThirdPct}%`,
-                          height: '100%',
-                          background: 'linear-gradient(to bottom, rgba(99, 102, 241, 0.12), rgba(7, 6, 20, 0.4))'
-                        }} />
-
-                        {/* Highlight Target Range */}
-                        {results.to_calendar_midnight.exists && (
-                          <div style={{
-                            position: 'absolute',
-                            left: `${secThirdPct}%`,
-                            width: `${midnightPct - secThirdPct}%`,
-                            height: '34px',
-                            bottom: '12px',
-                            background: 'linear-gradient(to right, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.03))',
-                            border: '1px solid rgba(245, 158, 11, 0.35)',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            color: '#fbbf24',
-                            boxShadow: '0 0 15px rgba(245, 158, 11, 0.08)',
-                            zIndex: 3
-                          }}>
-                            ✨ Target Window: {results.to_calendar_midnight.duration_formatted}
-                          </div>
-                        )}
-
-                        {/* Ticks & Text */}
-                        <div style={{ position: 'absolute', top: '12px', left: `${startPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 5 }}>
-                          <div style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600 }}>Sunset</div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{results.start_time}</div>
-                        </div>
-
-                        <div style={{ position: 'absolute', top: '24px', left: `${secThirdPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 5 }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 500 }}>2nd Third</div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>{results.second_third_start}</div>
-                        </div>
-
-                        <div style={{ position: 'absolute', top: '48px', left: `${midpointPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 4 }}>
-                          <div style={{ borderLeft: '1.5px dotted #2dd4bf', height: '92px', position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '0px', opacity: 0.6 }} />
-                          <div style={{ fontSize: '0.65rem', color: '#2dd4bf', fontWeight: 600, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(45, 212, 191, 0.2)' }}>🌙 Midpoint: {results.midpoint_start}</div>
-                        </div>
-
-                        <div style={{ position: 'absolute', bottom: '52px', left: `${midnightPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 4 }}>
-                          <div style={{ borderLeft: '1.5px dashed #f43f5e', height: '88px', position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '0px', opacity: 0.5 }} />
-                          <div style={{ fontSize: '0.65rem', color: '#f43f5e', fontWeight: 600, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(244, 63, 94, 0.2)' }}>⏰ Midnight</div>
-                        </div>
-
-                        <div style={{ position: 'absolute', top: '24px', left: `${thirdThirdPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 5 }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 500 }}>3rd Third</div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(7, 6, 20, 0.8)', padding: '2px 5px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>{results.third_third_start}</div>
-                        </div>
-
-                        <div style={{ position: 'absolute', top: '12px', left: `${endPct}%`, transform: 'translateX(-50%)', textAlign: 'center', zIndex: 5 }}>
-                          <div style={{ fontSize: '0.7rem', color: '#38bdf8', fontWeight: 600 }}>Dawn</div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{results.end_time}</div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Cell 5: Result - 2nd Third Start (Col Span 1) */}
-          {results && (
-            <div className="bento-cell bento-col-1">
-              <div>
-                <div className="cell-title">
-                  <span>✨ 2nd Third Starts</span>
-                  <span className="info-icon" title="Marks the end of the first third of the night. Important division in prayer schedules.">?</span>
-                </div>
-                <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0' }} className="glow-text-indigo">
-                  {results.second_third_start}
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
-                  Starts exactly {Math.round(results.night_duration_minutes / 3)} mins after sunset.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Cell 6: Result - Islamic Midnight (Col Span 1) */}
-          {results && (
-            <div className="bento-cell bento-col-1">
-              <div>
-                <div className="cell-title">
-                  <span>🌙 Midnight (Midpoint)</span>
-                  <span className="info-icon" title="The exact middle point of the night (Nisf al-Layl). Begins the second half of the night.">?</span>
-                </div>
-                <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0' }} className="glow-text-teal">
-                  {results.midpoint_start}
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
-                  Starts exactly {Math.round(results.night_duration_minutes / 2)} mins after sunset.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Cell 7: Result - To Calendar Midnight (Col Span 1) */}
-          {results && (
-            <div className="bento-cell bento-col-1">
-              <div>
-                <div className="cell-title">
-                  <span>⏰ To Calendar Midnight</span>
-                  <span className="info-icon" title="Calculated time duration from the start of the 2nd third of the night to 00:00.">?</span>
-                </div>
-                {results.to_calendar_midnight.exists ? (
-                  <>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0' }} className="glow-text-gold">
-                      {results.to_calendar_midnight.duration_formatted}
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: '#fbbf24', opacity: 0.8, margin: 0 }}>
-                      Interval: {results.to_calendar_midnight.start} → {results.to_calendar_midnight.end}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, margin: '0.75rem 0', color: '#64748b' }}>
-                      N/A
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
-                      2nd third starts after midnight.
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Cell 8: Result - To Islamic Midnight (Col Span 1) */}
-          {results && (
-            <div className="bento-cell bento-col-1">
-              <div>
-                <div className="cell-title">
-                  <span>🛡️ To Islamic Midnight</span>
-                  <span className="info-icon" title="Calculated time duration from the start of the 2nd third of the night to the Islamic midpoint. Always equal to 1/6th of total night duration.">?</span>
-                </div>
-                <div style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0.5rem 0', color: '#2dd4bf' }} className="glow-text-teal">
-                  {results.to_islamic_midnight.duration_formatted}
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#2dd4bf', opacity: 0.8, margin: 0 }}>
-                  Interval: {results.to_islamic_midnight.start} → {results.to_islamic_midnight.end}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Cell 9: Description / Educational Box (Col Span 2) */}
-          <div className="bento-cell bento-col-2">
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '1.25rem', marginTop: '-2px' }}>💡</span>
               <div style={{ fontSize: '0.825rem', color: '#94a3b8', lineHeight: 1.6 }}>
-                <strong style={{ color: '#e2e8f0' }}>Bento Dashboard Guide:</strong> The layout displays divisions computed live by our Flask service.
-                <br />
-                In Islamic calculations, <em>Nisf al-Layl (Islamic Midnight)</em> is the midpoint between Maghrib (Sunset) and Fajr (Dawn).
-                The duration between the start of the second third and the midpoint is always mathematically equal to exactly <strong>1/6th of the total night duration</strong> (represented in the teal card).
+                <strong style={{ color: '#e2e8f0' }}>Isha Prayer Calculation Guide:</strong> This dashboard helps determine the optimal window for praying Isha.
+                According to Islamic jurisprudence, the preferred time (Waqt al-Ikhtiyar) for Isha extends up to the end of the first third of the night (marked by the start of the <strong>2nd Third</strong>), or at most up to <strong>Islamic Midnight (Nisf al-Layl)</strong>.
+                The teal card shows the remaining window between these two critical bounds—which mathematically equals exactly <strong>1/6th of the total night duration</strong>.
               </div>
             </div>
           </div>
