@@ -30,13 +30,6 @@ const getCurrentTimeVal = () => {
   return Math.min(840, Math.max(0, totalMins - 960));
 };
 
-const PRESETS = [
-  { label: '❄️ Winter Solstice', start: '17:30', end: '05:30' },
-  { label: '☀️ Summer Solstice', start: '20:00', end: '04:00' },
-  { label: '🍁 Autumn Equinox', start: '18:00', end: '06:00' },
-  { label: '🌙 Early Sunset Night', start: '16:30', end: '05:00' },
-];
-
 function App() {
   const [startVal, setStartVal] = useState(120); // 18:00
   const [endVal, setEndVal] = useState(780);   // 05:00
@@ -44,6 +37,56 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentVal, setCurrentVal] = useState(getCurrentTimeVal());
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+  // Helper to fetch and set times
+  const applyAladhanTimes = async (url) => {
+    setIsLoadingLocation(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      if (data.code === 200) {
+        const timings = data.data.timings;
+        setStartVal(timeStrToVal(timings.Maghrib));
+        setEndVal(timeStrToVal(timings.Fajr));
+      }
+    } catch (err) {
+      console.error("Error fetching times from Aladhan API:", err);
+      alert("Could not fetch times. Please check location or try again.");
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
+
+  const fetchTimesByCoords = (lat, lon) => {
+    applyAladhanTimes(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=1`);
+  };
+
+  const fetchTimesByCityCountry = () => {
+    if (!city || !country) {
+      alert("Please enter both City and Country");
+      return;
+    }
+    applyAladhanTimes(`https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=1`);
+  };
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      setIsLoadingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchTimesByCoords(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn("Geolocation error:", error);
+          setIsLoadingLocation(false);
+        }
+      );
+    }
+  }, []);
 
   // Keep current time updated every 10 seconds
   useEffect(() => {
@@ -459,29 +502,49 @@ function App() {
             </div>
           </div>
 
-          {/* Cell 2: Presets (Col Span 1) */}
+          {/* Cell 2: Location Setup (Col Span 1) */}
           <div className="bento-cell bento-col-1">
             <div>
-              <div className="cell-title">🚀 Quick Presets</div>
+              <div className="cell-title">🌍 Location Setup</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '0.5rem' }}>
-                {PRESETS.map((preset, idx) => {
-                  const pStart = timeStrToVal(preset.start);
-                  const pEnd = timeStrToVal(preset.end);
-                  const isActive = startVal === pStart && endVal === pEnd;
-                  return (
-                    <button
-                      key={idx}
-                      className={`preset-pill ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        setStartVal(pStart);
-                        setEndVal(pEnd);
-                      }}
-                    >
-                      <div style={{ fontWeight: 600 }}>{preset.label}</div>
-                      <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{preset.start} - {preset.end}</div>
-                    </button>
-                  );
-                })}
+                <input
+                  type="text"
+                  placeholder="City (e.g. London)"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                />
+                <input
+                  type="text"
+                  list="country-options"
+                  placeholder="Country (e.g. UK)"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                />
+                <datalist id="country-options">
+                  <option value="UK" />
+                  <option value="US" />
+                  <option value="Canada" />
+                  <option value="Pakistan" />
+                  <option value="India" />
+                  <option value="Saudi Arabia" />
+                  <option value="UAE" />
+                  <option value="Australia" />
+                </datalist>
+                <button
+                  className="preset-pill active"
+                  onClick={fetchTimesByCityCountry}
+                  disabled={isLoadingLocation}
+                  style={{ justifyContent: 'center', opacity: isLoadingLocation ? 0.7 : 1 }}
+                >
+                  <div style={{ fontWeight: 600 }}>
+                    {isLoadingLocation ? 'Fetching...' : 'Fetch Times'}
+                  </div>
+                </button>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', textAlign: 'center', marginTop: '4px' }}>
+                  Uses UISK (Method 1)
+                </div>
               </div>
             </div>
           </div>
