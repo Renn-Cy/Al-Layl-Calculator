@@ -18,6 +18,18 @@ const timeStrToVal = (str) => {
   return Math.min(840, Math.max(0, totalMins - 960));
 };
 
+// Helper to get current local time as offset value (0 to 840)
+const getCurrentTimeVal = () => {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  let totalMins = h * 60 + m;
+  if (totalMins < 960) {
+    totalMins += 1440; // wrap day 2
+  }
+  return Math.min(840, Math.max(0, totalMins - 960));
+};
+
 const PRESETS = [
   { label: '❄️ Winter Solstice', start: '17:30', end: '05:30' },
   { label: '☀️ Summer Solstice', start: '20:00', end: '04:00' },
@@ -31,6 +43,15 @@ function App() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentVal, setCurrentVal] = useState(getCurrentTimeVal());
+
+  // Keep current time updated every 10 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentVal(getCurrentTimeVal());
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   const sliderRef = useRef(null);
   const activeHandleRef = useRef(null);
@@ -198,7 +219,7 @@ function App() {
           {results && (
             <div className="bento-cell bento-col-3">
               <div>
-                <div className="cell-title">📊 Live Divisions Visualizer</div>
+                <div className="cell-title">📊 Divisions Visualizer</div>
 
                 <div style={{ position: 'relative', width: '100%', height: '140px', background: 'rgba(2, 3, 10, 0.45)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)', overflow: 'hidden', marginTop: '0.75rem' }}>
                   {/* Shaded partitions */}
@@ -217,9 +238,48 @@ function App() {
                     const thirdThirdPct = getVisPercent(thirdThirdVal);
                     const midnightPct = getVisPercent(480);
                     const showMidnight = startVal < 480 && endVal > 480;
+                    const currentTimePct = getVisPercent(currentVal);
+                    const showCurrentTime = currentVal >= startVal && currentVal <= endVal;
 
                     return (
                       <>
+                        {/* Current Time Vertical Line (Behind Text) */}
+                        {showCurrentTime && (
+                          <div style={{
+                            position: 'absolute',
+                            left: `${currentTimePct}%`,
+                            top: 0,
+                            bottom: 0,
+                            width: '2px',
+                            background: '#ef4444',
+                            boxShadow: '0 0 8px #ef4444, 0 0 16px #ef4444',
+                            zIndex: 1,
+                            pointerEvents: 'none'
+                          }} />
+                        )}
+
+                        {/* Current Time Floating Label (In Front of Text) */}
+                        {showCurrentTime && (
+                          <div style={{
+                            position: 'absolute',
+                            left: `${currentTimePct}%`,
+                            top: '4px',
+                            transform: 'translateX(-50%)',
+                            background: '#ef4444',
+                            color: '#fff',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '0.65rem',
+                            fontWeight: 800,
+                            whiteSpace: 'nowrap',
+                            border: '1px solid rgba(255, 255, 255, 0.25)',
+                            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)',
+                            zIndex: 10,
+                            pointerEvents: 'none'
+                          }}>
+                            Now ({valToTimeStr(currentVal)})
+                          </div>
+                        )}
                         {/* 1st Third */}
                         <div style={{
                           position: 'absolute',
